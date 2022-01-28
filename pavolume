@@ -2,7 +2,7 @@
 import argparse
 import os
 
-import pulsectl  # pavolume --step 5 --operation increase/decrease/toggle --sound 0 --notification 0
+import pulsectl
 
 
 def main():
