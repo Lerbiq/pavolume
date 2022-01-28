@@ -1,0 +1,71 @@
+#!/bin/env python3
+import argparse
+import os
+
+import pulsectl  # pavolume --step 5 --operation increase/decrease/toggle --sound 0 --notification 0
+
+
+def main():
+    parser = argparse.ArgumentParser(
+            description="Simple python application to control pulseaudio volume for wm setups with dunst"
+    )
+    parser.add_argument("--step", "-s", type=int, nargs="?", default=5, choices=(0,101), metavar="[0-100]",
+                        help="How many percent should the volume increase/decrease")
+    parser.add_argument("--operation", "-o", type=str, nargs="?", default="toggle",
+                        choices=["increase", "decrease", "toggle"],
+                        help="What should happen with the volume (toggle = mute/unmute)")
+    parser.add_argument("--notify", "-n", action='store_true', help="If notification should be displayed")
+    parser.add_argument("--sound", action='store_true', help="If sound should be played")
+
+    args = parser.parse_args()
+
+    msg_id = 991249
+    with pulsectl.Pulse('pavolume-py') as pulse:
+        default_sink = pulse.get_sink_by_name(pulse.server_info().default_sink_name)
+        if args.operation == "toggle":
+            if default_sink.mute == 1:
+                pulse.mute(default_sink, False)
+                if args.notify:
+                    current_volume = pulse.volume_get_all_chans(default_sink)
+                    os.system(f"dunstify -a \"Audio unmuted\" -u low -i audio-volume-high "
+                              f"-r \"{msg_id}\" \"Volume: {round(current_volume * 100)}%\"")
+                if args.sound:
+                    os.system(f"canberra-gtk-play -i audio-volume-change -d changeVolume")
+            else:
+                pulse.mute(default_sink, True)
+                if args.notify :
+                    os.system(
+                        f"dunstify -a \"Audio muted\" -u low -i audio-volume-muted -r \"{msg_id}\" \"Volume muted\"")
+            print(pulse.sink_list())
+        elif args.operation == "increase":
+            current_volume = pulse.volume_get_all_chans(default_sink)
+            step = args.step
+            if args.step > 100:
+                step = 100
+            elif args.step < 1:
+                step = 1
+            pulse.volume_set_all_chans(default_sink, current_volume + (step * 0.01))
+            if args.notify:
+                os.system(f"dunstify -a \"Audio change\" -u low -i audio-volume-high"
+                          f" -r \"{msg_id}\" -h int:value:{round((current_volume + step * 0.01) * 100)}"
+                          f" \"Volume: {round((current_volume + step * 0.01) * 100)}%\"")
+            if args.sound:
+                os.system("canberra-gtk-play -i audio-volume-change -d changeVolume")
+        elif args.operation == "decrease":
+            current_volume = pulse.volume_get_all_chans(default_sink)
+            step = args.step
+            if args.step > 100:
+                step = 100
+            elif args.step < 1:
+                step = 1
+            pulse.volume_set_all_chans(default_sink, current_volume - (step * 0.01))
+            if args.notify:
+                os.system(f"dunstify -a \"Audio change\" -u low -i audio-volume-high"
+                          f" -r \"{msg_id}\" -h int:value:{round((current_volume - step * 0.01) * 100)}"
+                          f" \"Volume: {round((current_volume - step * 0.01) * 100)}%\"")
+            if args.sound:
+                os.system("canberra-gtk-play -i audio-volume-change -d changeVolume")
+
+
+if __name__ == '__main__':
+    main()
