@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser(
             description="Simple python application to control pulseaudio volume for wm setups with dunst"
     )
-    parser.add_argument("--step", "-s", type=int, nargs="?", default=5, choices=(0,101), metavar="[0-100]",
+    parser.add_argument("--step", "-s", type=int, nargs="?", default=5, choices=(0, 101), metavar="[0-100]",
                         help="How many percent should the volume increase/decrease")
     parser.add_argument("--operation", "-o", type=str, nargs="?", default="toggle",
                         choices=["increase", "decrease", "toggle"],
@@ -33,10 +33,10 @@ def main():
                     os.system(f"canberra-gtk-play -i audio-volume-change -d changeVolume")
             else:
                 pulse.mute(default_sink, True)
-                if args.notify :
+                if args.notify:
                     os.system(
                         f"dunstify -a \"Audio muted\" -u low -i audio-volume-muted -r \"{msg_id}\" \"Volume muted\"")
-            print(pulse.sink_list())
+
         elif args.operation == "increase":
             current_volume = pulse.volume_get_all_chans(default_sink)
             step = args.step
@@ -51,6 +51,7 @@ def main():
                           f" \"Volume: {round((current_volume + step * 0.01) * 100)}%\"")
             if args.sound:
                 os.system("canberra-gtk-play -i audio-volume-change -d changeVolume")
+
         elif args.operation == "decrease":
             current_volume = pulse.volume_get_all_chans(default_sink)
             step = args.step
