@@ -59,11 +59,17 @@ def main():
                 step = 100
             elif args.step < 1:
                 step = 1
-            pulse.volume_set_all_chans(default_sink, current_volume - (step * 0.01))
+
+            if current_volume - (step * 0.01) < 0:
+                pulse.volume_set_all_chans(default_sink, 0)
+            else:
+                pulse.volume_set_all_chans(default_sink, current_volume - (step * 0.01))
+
+            current_volume = pulse.volume_get_all_chans(default_sink)
             if args.notify:
                 os.system(f"dunstify -a \"Audio change\" -u low -i audio-volume-high"
-                          f" -r \"{msg_id}\" -h int:value:{round((current_volume - step * 0.01) * 100)}"
-                          f" \"Volume: {round((current_volume - step * 0.01) * 100)}%\"")
+                          f" -r \"{msg_id}\" -h int:value:{round(current_volume * 100)}"
+                          f" \"Volume: {round(current_volume * 100)}%\"")
             if args.sound:
                 os.system("canberra-gtk-play -i audio-volume-change -d changeVolume")
 
